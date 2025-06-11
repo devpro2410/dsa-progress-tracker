@@ -38,7 +38,7 @@ export const DSA_TOPICS = [
 ]
 
 // Set your admin password here (in production, use environment variables)
-const ADMIN_PASSWORD = "admin123"
+const ADMIN_PASSWORD = "chikun24"
 
 export default function DSATracker() {
   const [data, setData] = useState<DSAData>({})
