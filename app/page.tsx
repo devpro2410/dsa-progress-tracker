@@ -168,6 +168,29 @@ export default function DSATracker() {
           <h1 className="text-3xl font-light text-gray-800 mb-2">My DSA Progress Journey</h1>
           <div className="flex flex-col items-center gap-2">
             <p className="text-gray-600">Daily Data Structures & Algorithms Practice Tracker</p>
+
+            {/* Profile Links */}
+            <div className="flex items-center gap-4 text-sm">
+              <a
+                href="https://leetcode.com/u/devpro2410/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors"
+              >
+                <span>🔗</span>
+                <span>LeetCode Profile</span>
+              </a>
+              <a
+                href="https://takeuforward.org/plus/profile/sivansh2410"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-100 text-orange-800 hover:bg-orange-200 transition-colors"
+              >
+                <span>📚</span>
+                <span>TUF Profile</span>
+              </a>
+            </div>
+
             {getCurrentStreak() > 0 && (
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
                 🔥 {getCurrentStreak()} day streak
