@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase"
 
 // This would be stored in environment variables in production
 // For now, we'll hash it here for demonstration
-const ADMIN_PASSWORD = "chikun24"
+const ADMIN_PASSWORD = "888888"
 const ADMIN_PASSWORD_HASH = createHash("sha256").update(ADMIN_PASSWORD).digest("hex")
 
 // Session duration (24 hours)
