@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import type { DSAData } from "@/app/page"
+import { DSA_TOPICS } from "@/constants"
 
 interface CalendarProps {
   data: DSAData
@@ -133,11 +134,26 @@ export function Calendar({ data, onDateClick }: CalendarProps) {
                 </span>
 
                 <div className="flex-1 overflow-hidden">
-                  {topicsForDate.map(({ topic, count }, index) => (
-                    <div key={topic} className="text-xs bg-gray-200 text-gray-700 px-1 py-0.5 rounded mb-0.5 truncate">
-                      {topic.split(" ")[0]}: {count}
-                    </div>
-                  ))}
+                  {topicsForDate.map(({ topic, count }, index) => {
+                    // Find the topic to check if it's completed
+                    const topicData = DSA_TOPICS.find((t) => t.name === topic)
+                    const totalSolved = Object.values(data).reduce((total, entry) => {
+                      return total + (entry[topic] || 0)
+                    }, 0)
+                    const isCompleted = topicData && totalSolved >= topicData.total
+
+                    return (
+                      <div
+                        key={topic}
+                        className={`text-xs px-1 py-0.5 rounded mb-0.5 truncate ${
+                          isCompleted ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {topic.split(" ")[0]}: {count}
+                        {isCompleted && " ✓"}
+                      </div>
+                    )
+                  })}
                   {topicsForDate.length > 3 && <div className="text-xs text-gray-500">+more</div>}
                 </div>
               </div>

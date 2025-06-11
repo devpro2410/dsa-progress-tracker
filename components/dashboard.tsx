@@ -154,17 +154,31 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {topicProgress.map((topic) => (
-              <div key={topic.name} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">{topic.name}</span>
-                  <span className="text-sm text-gray-500">
-                    {topic.solved}/{topic.total} ({Math.round(topic.percentage)}%)
-                  </span>
+            {topicProgress.map((topic) => {
+              const isCompleted = topic.solved >= topic.total
+
+              return (
+                <div key={topic.name} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span
+                      className={`text-sm font-medium ${isCompleted ? "text-green-700" : "text-gray-700"} flex items-center gap-2`}
+                    >
+                      {topic.name}
+                      {isCompleted && <span className="text-green-600 text-xs">✓</span>}
+                    </span>
+                    <span className={`text-sm ${isCompleted ? "text-green-600 font-medium" : "text-gray-500"}`}>
+                      {topic.solved}/{topic.total} ({Math.round(topic.percentage)}%)
+                      {isCompleted && <span className="ml-1">🎉</span>}
+                    </span>
+                  </div>
+                  <Progress
+                    value={Math.min(topic.percentage, 100)}
+                    className={`h-2 ${isCompleted ? "bg-green-100" : ""}`}
+                  />
+                  {isCompleted && <p className="text-xs text-green-600 font-medium">Topic completed!</p>}
                 </div>
-                <Progress value={topic.percentage} className="h-2" />
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>
