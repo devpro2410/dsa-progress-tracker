@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type DSAData, DSA_TOPICS } from "@/app/page"
+import { DataManager } from "@/components/data-manager"
 
 interface DashboardProps {
   data: DSAData
+  onDataImport: (data: DSAData) => void
 }
 
-export function Dashboard({ data }: DashboardProps) {
+export function Dashboard({ data, onDataImport }: DashboardProps) {
   const [selectedTopic, setSelectedTopic] = useState<string>("all")
 
   // Calculate total questions solved
@@ -230,6 +232,9 @@ export function Dashboard({ data }: DashboardProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Data Management */}
+      <DataManager data={data} onDataImport={onDataImport} />
     </div>
   )
 }

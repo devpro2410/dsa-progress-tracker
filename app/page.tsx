@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 import { Calendar } from "@/components/calendar"
 import { Dashboard } from "@/components/dashboard"
 import { DailyEntryModal } from "@/components/daily-entry-modal"
+import { AdminPanel } from "@/components/admin-panel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getEntries, saveEntry } from "@/lib/data-service"
 
 export interface DSAEntry {
   [key: string]: number
@@ -35,35 +37,47 @@ export const DSA_TOPICS = [
   { name: "Bit Manipulation", total: 8 },
 ]
 
+// Set your admin password here (in production, use environment variables)
+const ADMIN_PASSWORD = "admin123"
+
 export default function DSATracker() {
   const [data, setData] = useState<DSAData>({})
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAdminMode, setIsAdminMode] = useState(false)
 
-  // Load data from localStorage on component mount
+  // Load data from Supabase on component mount
   useEffect(() => {
-    const savedData = localStorage.getItem("dsa-progress-data")
-    if (savedData) {
-      setData(JSON.parse(savedData))
+    const fetchData = async () => {
+      setIsLoading(true)
+      const entriesData = await getEntries()
+      setData(entriesData)
+      setIsLoading(false)
     }
+
+    fetchData()
   }, [])
 
-  // Save data to localStorage whenever data changes
-  useEffect(() => {
-    localStorage.setItem("dsa-progress-data", JSON.stringify(data))
-  }, [data])
-
   const handleDateClick = (date: string) => {
+    if (!isAdminMode) return // Only allow editing in admin mode
     setSelectedDate(date)
     setIsModalOpen(true)
   }
 
-  const handleSaveEntry = (entry: DSAEntry) => {
-    if (selectedDate) {
-      setData((prev) => ({
-        ...prev,
-        [selectedDate]: entry,
-      }))
+  const handleSaveEntry = async (entry: DSAEntry) => {
+    if (selectedDate && isAdminMode) {
+      setIsLoading(true)
+      const success = await saveEntry(selectedDate, entry)
+
+      if (success) {
+        setData((prev) => ({
+          ...prev,
+          [selectedDate]: entry,
+        }))
+      }
+
+      setIsLoading(false)
     }
     setIsModalOpen(false)
   }
@@ -71,6 +85,18 @@ export default function DSATracker() {
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setSelectedDate(null)
+  }
+
+  const handleAuthenticateAdmin = (password: string) => {
+    if (password === ADMIN_PASSWORD) {
+      setIsAdminMode(true)
+    } else {
+      alert("Incorrect password")
+    }
+  }
+
+  const handleToggleAdminMode = () => {
+    setIsAdminMode(false)
   }
 
   // Calculate current streak
@@ -118,17 +144,36 @@ export default function DSATracker() {
     return streak
   }
 
+  if (isLoading && !Object.keys(data).length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-800 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading DSA progress...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminPanel
+        isAdminMode={isAdminMode}
+        onToggleAdminMode={handleToggleAdminMode}
+        onAuthenticateAdmin={handleAuthenticateAdmin}
+      />
+
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <header className="text-center mb-8">
-          <h1 className="text-3xl font-light text-gray-800 mb-2">DSA Progress Tracker</h1>
-          <p className="text-gray-600 mb-2">Track your daily Data Structures & Algorithms practice</p>
-          {getCurrentStreak() > 0 && (
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-              🔥 {getCurrentStreak()} day streak
-            </div>
-          )}
+          <h1 className="text-3xl font-light text-gray-800 mb-2">My DSA Progress Journey</h1>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-gray-600">Daily Data Structures & Algorithms Practice Tracker</p>
+            {getCurrentStreak() > 0 && (
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+                🔥 {getCurrentStreak()} day streak
+              </div>
+            )}
+          </div>
         </header>
 
         <Tabs defaultValue="calendar" className="w-full">
@@ -142,17 +187,23 @@ export default function DSATracker() {
           </TabsContent>
 
           <TabsContent value="dashboard">
-            <Dashboard data={data} />
+            <Dashboard data={data} onDataImport={() => {}} />
           </TabsContent>
         </Tabs>
 
-        <DailyEntryModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onSave={handleSaveEntry}
-          selectedDate={selectedDate}
-          existingEntry={selectedDate ? data[selectedDate] : undefined}
-        />
+        {isAdminMode && (
+          <DailyEntryModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            onSave={handleSaveEntry}
+            selectedDate={selectedDate}
+            existingEntry={selectedDate ? data[selectedDate] : undefined}
+          />
+        )}
+
+        <footer className="mt-12 text-center text-sm text-gray-500">
+          <p>Following my journey in mastering Data Structures & Algorithms</p>
+        </footer>
       </div>
     </div>
   )
