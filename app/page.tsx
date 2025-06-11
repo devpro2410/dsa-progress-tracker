@@ -37,9 +37,6 @@ export const DSA_TOPICS = [
   { name: "Bit Manipulation", total: 8 },
 ]
 
-// Set your admin password here (in production, use environment variables)
-const ADMIN_PASSWORD = "chikun24"
-
 export default function DSATracker() {
   const [data, setData] = useState<DSAData>({})
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -87,12 +84,8 @@ export default function DSATracker() {
     setSelectedDate(null)
   }
 
-  const handleAuthenticateAdmin = (password: string) => {
-    if (password === ADMIN_PASSWORD) {
-      setIsAdminMode(true)
-    } else {
-      alert("Incorrect password")
-    }
+  const handleAuthenticateAdmin = () => {
+    setIsAdminMode(true)
   }
 
   const handleToggleAdminMode = () => {

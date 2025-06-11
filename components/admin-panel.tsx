@@ -2,27 +2,86 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { EyeOff, Settings } from "lucide-react"
+import { Settings, LogOut } from "lucide-react"
 
 interface AdminPanelProps {
   isAdminMode: boolean
   onToggleAdminMode: () => void
-  onAuthenticateAdmin: (password: string) => void
+  onAuthenticateAdmin: () => void
 }
 
 export function AdminPanel({ isAdminMode, onToggleAdminMode, onAuthenticateAdmin }: AdminPanelProps) {
   const [password, setPassword] = useState("")
   const [showPasswordInput, setShowPasswordInput] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/auth/verify")
+        const data = await response.json()
+
+        if (data.authenticated) {
+          onAuthenticateAdmin()
+        }
+      } catch (error) {
+        console.error("Session verification error:", error)
+      }
+    }
+
+    checkSession()
+  }, [onAuthenticateAdmin])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onAuthenticateAdmin(password)
-    setPassword("")
-    setShowPasswordInput(false)
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/auth/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        onAuthenticateAdmin()
+        setPassword("")
+        setShowPasswordInput(false)
+      } else {
+        setError("Invalid password")
+      }
+    } catch (error) {
+      setError("Authentication failed")
+      console.error("Authentication error:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    setIsLoading(true)
+
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      })
+      onToggleAdminMode()
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isAdminMode) {
@@ -33,8 +92,8 @@ export function AdminPanel({ isAdminMode, onToggleAdminMode, onAuthenticateAdmin
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-sm text-green-700 font-medium">Admin Mode</span>
-              <Button variant="ghost" size="sm" onClick={onToggleAdminMode}>
-                <EyeOff className="h-4 w-4" />
+              <Button variant="ghost" size="sm" onClick={handleLogout} disabled={isLoading}>
+                <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </CardContent>
@@ -68,10 +127,12 @@ export function AdminPanel({ isAdminMode, onToggleAdminMode, onAuthenticateAdmin
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-8 text-sm"
                 autoFocus
+                disabled={isLoading}
               />
+              {error && <p className="text-xs text-red-500">{error}</p>}
               <div className="flex gap-1">
-                <Button type="submit" size="sm" className="h-7 text-xs">
-                  Login
+                <Button type="submit" size="sm" className="h-7 text-xs" disabled={isLoading}>
+                  {isLoading ? "Verifying..." : "Login"}
                 </Button>
                 <Button
                   type="button"
@@ -79,6 +140,7 @@ export function AdminPanel({ isAdminMode, onToggleAdminMode, onAuthenticateAdmin
                   size="sm"
                   onClick={() => setShowPasswordInput(false)}
                   className="h-7 text-xs"
+                  disabled={isLoading}
                 >
                   Cancel
                 </Button>
