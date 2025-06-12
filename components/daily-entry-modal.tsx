@@ -14,11 +14,18 @@ interface DailyEntryModalProps {
   onSave: (entry: DSAEntry) => void
   selectedDate: string | null
   existingEntry?: DSAEntry
+  allData: Record<string, DSAEntry> // Pass all data to calculate totals
 }
 
-export function DailyEntryModal({ isOpen, onClose, onSave, selectedDate, existingEntry }: DailyEntryModalProps) {
+export function DailyEntryModal({
+  isOpen,
+  onClose,
+  onSave,
+  selectedDate,
+  existingEntry,
+  allData,
+}: DailyEntryModalProps) {
   const [entry, setEntry] = useState<DSAEntry>({})
-  const [data, setData] = useState<Record<string, DSAEntry>>({}) // Assuming you have a way to fetch all entries
 
   useEffect(() => {
     if (existingEntry) {
@@ -33,12 +40,30 @@ export function DailyEntryModal({ isOpen, onClose, onSave, selectedDate, existin
     }
   }, [existingEntry, isOpen])
 
+  // Calculate total questions solved for each topic across all days
+  const getTopicTotalSolved = (topicName: string) => {
+    return Object.values(allData).reduce((total, dayEntry) => {
+      return total + (dayEntry[topicName] || 0)
+    }, 0)
+  }
+
+  // Calculate total excluding current day (for validation)
+  const getTopicTotalExcludingCurrentDay = (topicName: string) => {
+    return Object.entries(allData)
+      .filter(([date]) => date !== selectedDate)
+      .reduce((total, [_, dayEntry]) => {
+        return total + (dayEntry[topicName] || 0)
+      }, 0)
+  }
+
   const handleInputChange = (topicName: string, value: string) => {
     const topic = DSA_TOPICS.find((t) => t.name === topicName)
     if (!topic) return
 
     const numValue = Math.max(0, Number.parseInt(value) || 0)
-    const clampedValue = Math.min(numValue, topic.total) // Prevent exceeding limit
+    const totalSolvedExcludingToday = getTopicTotalExcludingCurrentDay(topicName)
+    const maxAllowedForToday = Math.max(0, topic.total - totalSolvedExcludingToday)
+    const clampedValue = Math.min(numValue, maxAllowedForToday)
 
     setEntry((prev) => ({
       ...prev,
@@ -85,38 +110,54 @@ export function DailyEntryModal({ isOpen, onClose, onSave, selectedDate, existin
             <div className="space-y-4 pb-4">
               {DSA_TOPICS.map((topic) => {
                 const currentValue = entry[topic.name] || 0
-                const isCompleted = currentValue >= topic.total
-                const totalSolved = Object.values(data).reduce((total, dayEntry) => {
-                  return total + (dayEntry[topic.name] || 0)
-                }, 0)
-                const isTopicCompleted = totalSolved >= topic.total
+                const totalSolved = getTopicTotalSolved(topic.name)
+                const totalSolvedExcludingToday = getTopicTotalExcludingCurrentDay(topic.name)
+                const isTopicCompleted = totalSolvedExcludingToday >= topic.total
+                const maxAllowedForToday = Math.max(0, topic.total - totalSolvedExcludingToday)
+                const remainingQuestions = topic.total - totalSolvedExcludingToday
 
                 return (
                   <div key={topic.name} className="space-y-2">
                     <Label
                       htmlFor={topic.name}
-                      className="text-sm font-medium text-gray-700 flex items-center justify-between"
+                      className={`text-sm font-medium flex items-center justify-between ${
+                        isTopicCompleted ? "text-green-700" : "text-gray-700"
+                      }`}
                     >
                       <span className="flex items-center gap-2">
                         {topic.name}
-                        {isTopicCompleted && <span className="text-green-600 text-xs">✓ Completed</span>}
+                        {isTopicCompleted && <span className="text-green-600 text-xs font-bold">✓ COMPLETED</span>}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        ({totalSolved}/{topic.total})
+                      <span className={`text-xs ${isTopicCompleted ? "text-green-600" : "text-gray-500"}`}>
+                        ({totalSolvedExcludingToday + currentValue}/{topic.total})
                       </span>
                     </Label>
+
                     <Input
                       id={topic.name}
                       type="number"
                       min="0"
-                      max={topic.total - totalSolved + currentValue} // Allow current value but prevent exceeding total
+                      max={maxAllowedForToday}
                       value={currentValue}
                       onChange={(e) => handleInputChange(topic.name, e.target.value)}
-                      className={`w-full ${isTopicCompleted ? "bg-green-50 border-green-200" : ""}`}
+                      className={`w-full ${
+                        isTopicCompleted ? "bg-green-50 border-green-200 text-green-700 cursor-not-allowed" : ""
+                      }`}
                       placeholder="0"
-                      disabled={isTopicCompleted && currentValue === 0} // Disable if topic completed and no current entry
+                      disabled={isTopicCompleted}
                     />
-                    {isTopicCompleted && <p className="text-xs text-green-600">This topic is completed! 🎉</p>}
+
+                    {isTopicCompleted ? (
+                      <p className="text-xs text-green-600 font-medium">
+                        🎉 This topic is completed! All {topic.total} questions solved.
+                      </p>
+                    ) : remainingQuestions <= 5 ? (
+                      <p className="text-xs text-orange-600">
+                        ⚠️ Only {remainingQuestions} questions remaining for this topic
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500">{remainingQuestions} questions remaining</p>
+                    )}
                   </div>
                 )
               })}
@@ -127,7 +168,7 @@ export function DailyEntryModal({ isOpen, onClose, onSave, selectedDate, existin
         <div className="border-t pt-4 space-y-4 flex-shrink-0">
           <div className="text-center">
             <span className="text-sm text-gray-600">
-              Total questions: <span className="font-medium">{getTotalQuestions()}</span>
+              Total questions today: <span className="font-medium">{getTotalQuestions()}</span>
             </span>
           </div>
 

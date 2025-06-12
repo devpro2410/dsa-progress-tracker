@@ -227,6 +227,7 @@ export default function DSATracker() {
             onSave={handleSaveEntry}
             selectedDate={selectedDate}
             existingEntry={selectedDate ? data[selectedDate] : undefined}
+            allData={data}
           />
         )}
 
