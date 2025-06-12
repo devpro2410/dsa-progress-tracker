@@ -38,7 +38,7 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
     })
   }
 
-  // Get daily progress for a specific topic
+  // Get daily progress for a specific topic (only days with questions > 0)
   const getTopicDailyProgress = (topicName: string) => {
     return Object.entries(data)
       .filter(([_, entry]) => entry[topicName] > 0)
@@ -47,6 +47,20 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
         count: entry[topicName],
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }
+
+  // Get all daily progress (only days with at least 1 question)
+  const getAllDailyProgress = () => {
+    return Object.entries(data)
+      .filter(([_, entry]) => {
+        const totalForDay = Object.values(entry).reduce((sum, count) => sum + count, 0)
+        return totalForDay > 0
+      })
+      .map(([date, entry]) => ({
+        date,
+        total: Object.values(entry).reduce((sum, count) => sum + count, 0),
+      }))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }
 
   // Calculate current streak
@@ -96,9 +110,18 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
     return streak
   }
 
+  // Get active days count (only days with questions > 0)
+  const getActiveDaysCount = () => {
+    return Object.keys(data).filter((date) => {
+      const entry = data[date]
+      return Object.values(entry).some((count) => count > 0)
+    }).length
+  }
+
   const totalSolved = getTotalQuestionsSolved()
   const topicProgress = getTopicProgress()
   const totalQuestions = DSA_TOPICS.reduce((sum, topic) => sum + topic.total, 0)
+  const activeDaysCount = getActiveDaysCount()
 
   return (
     <div className="space-y-6">
@@ -141,7 +164,7 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
             <CardTitle className="text-sm font-medium text-gray-600">Active Days</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-800">{Object.keys(data).length}</div>
+            <div className="text-2xl font-bold text-gray-800">{activeDaysCount}</div>
             <p className="text-xs text-gray-500">days with practice</p>
           </CardContent>
         </Card>
@@ -206,24 +229,23 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
         <CardContent>
           {selectedTopic === "all" ? (
             <div className="space-y-3">
-              {Object.entries(data)
-                .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+              {getAllDailyProgress()
                 .slice(0, 10)
-                .map(([date, entry]) => {
-                  const totalForDay = Object.values(entry).reduce((sum, count) => sum + count, 0)
-                  return (
-                    <div key={date} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium text-gray-700">
-                        {new Date(date).toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                      <span className="text-gray-600">{totalForDay} questions</span>
-                    </div>
-                  )
-                })}
+                .map(({ date, total }) => (
+                  <div key={date} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span className="font-medium text-gray-700">
+                      {new Date(date).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className="text-gray-600">{total} questions</span>
+                  </div>
+                ))}
+              {getAllDailyProgress().length === 0 && (
+                <p className="text-center text-gray-500 py-4">No active days yet. Start solving questions!</p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -242,6 +264,9 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
                     <span className="text-gray-600">{count} questions</span>
                   </div>
                 ))}
+              {getTopicDailyProgress(selectedTopic).length === 0 && (
+                <p className="text-center text-gray-500 py-4">No questions solved for {selectedTopic} yet.</p>
+              )}
             </div>
           )}
         </CardContent>

@@ -1,31 +1,23 @@
 import { supabase } from "./supabase"
 import type { DSAEntry } from "@/app/page"
 
-// Get all entries
+// Get all entries (only those with actual questions solved)
 export async function getEntries(): Promise<Record<string, DSAEntry>> {
-  // Get all entries
-  const { data: entries, error: entriesError } = await supabase.from("entries").select("id, date")
-
-  if (entriesError || !entries || entries.length === 0) {
-    return {}
-  }
-
-  // Get all entry details with topics
-  const { data: details, error: detailsError } = await supabase
-    .from("entry_details")
+  // Get all entries that have entry_details with questions > 0
+  const { data: entries, error: entriesError } = await supabase
+    .from("entries")
     .select(`
       id, 
-      entry_id, 
-      questions_solved,
-      topics:topic_id(id, name)
+      date,
+      entry_details!inner(
+        id,
+        questions_solved,
+        topics:topic_id(id, name)
+      )
     `)
-    .in(
-      "entry_id",
-      entries.map((e) => e.id),
-    )
+    .gt("entry_details.questions_solved", 0)
 
-  if (detailsError) {
-    console.error("Error fetching entry details:", detailsError)
+  if (entriesError || !entries || entries.length === 0) {
     return {}
   }
 
@@ -33,16 +25,18 @@ export async function getEntries(): Promise<Record<string, DSAEntry>> {
   const formattedData: Record<string, DSAEntry> = {}
 
   entries.forEach((entry) => {
-    const entryDetails = details?.filter((d) => d.entry_id === entry.id) || []
     const entryData: DSAEntry = {}
 
-    entryDetails.forEach((detail) => {
-      if (detail.topics) {
+    entry.entry_details.forEach((detail) => {
+      if (detail.topics && detail.questions_solved > 0) {
         entryData[detail.topics.name] = detail.questions_solved
       }
     })
 
-    formattedData[entry.date] = entryData
+    // Only include entries that have at least one question solved
+    if (Object.values(entryData).some((count) => count > 0)) {
+      formattedData[entry.date] = entryData
+    }
   })
 
   return formattedData
@@ -50,7 +44,30 @@ export async function getEntries(): Promise<Record<string, DSAEntry>> {
 
 // Save an entry for a specific date
 export async function saveEntry(date: string, entry: DSAEntry): Promise<boolean> {
-  // Get topics for mapping
+  // Check if all values are zero - if so, delete the entry entirely
+  const hasAnyQuestions = Object.values(entry).some((count) => count > 0)
+
+  if (!hasAnyQuestions) {
+    // Delete the entire entry if no questions were solved
+    const { data: existingEntry } = await supabase.from("entries").select("id").eq("date", date).single()
+
+    if (existingEntry) {
+      // Delete entry details first (due to foreign key constraint)
+      await supabase.from("entry_details").delete().eq("entry_id", existingEntry.id)
+
+      // Then delete the entry itself
+      const { error } = await supabase.from("entries").delete().eq("id", existingEntry.id)
+
+      if (error) {
+        console.error("Error deleting entry:", error)
+        return false
+      }
+    }
+
+    return true // Successfully "saved" (deleted) the empty entry
+  }
+
+  // Continue with normal save logic if there are questions solved
   const { data: topics } = await supabase.from("topics").select("id, name")
 
   if (!topics) return false
@@ -89,7 +106,7 @@ export async function saveEntry(date: string, entry: DSAEntry): Promise<boolean>
     await supabase.from("entry_details").delete().eq("entry_id", entryId)
   }
 
-  // Insert new entry details
+  // Insert new entry details (only for topics with questions > 0)
   const entryDetails = Object.entries(entry)
     .filter(([_, count]) => count > 0)
     .map(([topicName, count]) => ({

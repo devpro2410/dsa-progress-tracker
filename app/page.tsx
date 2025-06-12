@@ -68,10 +68,23 @@ export default function DSATracker() {
       const success = await saveEntry(selectedDate, entry)
 
       if (success) {
-        setData((prev) => ({
-          ...prev,
-          [selectedDate]: entry,
-        }))
+        // Check if all values are zero - if so, remove from local data
+        const hasAnyQuestions = Object.values(entry).some((count) => count > 0)
+
+        if (hasAnyQuestions) {
+          // Update the data with the new entry
+          setData((prev) => ({
+            ...prev,
+            [selectedDate]: entry,
+          }))
+        } else {
+          // Remove the date from local data since all values are zero
+          setData((prev) => {
+            const newData = { ...prev }
+            delete newData[selectedDate]
+            return newData
+          })
+        }
       }
 
       setIsLoading(false)
