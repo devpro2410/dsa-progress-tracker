@@ -6,22 +6,29 @@
 
 ## Overview
 
+Track your DSA (Data Structures & Algorithms) progress with a clean, minimalist interface. The DSA Tracker helps you stay organized and motivated throughout your coding journey.
 
 ## Deployment
 
 Your project is live at:
 
-**[https://vercel.com/devpro2410s-projects/v0-minimalist-dsa-tracker](https://vercel.com/devpro2410s-projects/v0-minimalist-dsa-tracker)**
+**[https://sivansh-dsa-tracker.vercel.app/](https://sivansh-dsa-tracker.vercel.app/)**
 
-## Build your app
+##  Features
 
-Continue building your app on:
+-  Track the status of DSA problems — **Unsolved**, **Attempted**, or **Solved**
+-  Organize problems by topic
+-  Filter problems based on status or category
+-  Minimalist and responsive UI for a focused experience
+-  Persistent local storage (your data stays even after refresh)
 
-**[https://v0.dev/chat/projects/WkTvm7OyPCD](https://v0.dev/chat/projects/WkTvm7OyPCD)**
 
-## How It Works
+## Getting Started (for Developers)
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+Clone the repository and run it locally:
+
+```bash
+git clone https://github.com/your-username/dsa-tracker.git
+cd dsa-tracker
+npm install
+npm run dev
