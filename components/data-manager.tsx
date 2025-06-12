@@ -12,9 +12,10 @@ import type { DSAData } from "@/app/page"
 interface DataManagerProps {
   data: DSAData
   onDataImport: (data: DSAData) => void
+  isAdminMode?: boolean // Add admin mode prop
 }
 
-export function DataManager({ data, onDataImport }: DataManagerProps) {
+export function DataManager({ data, onDataImport, isAdminMode = false }: DataManagerProps) {
   const [importError, setImportError] = useState<string | null>(null)
 
   const handleExport = () => {
@@ -81,25 +82,35 @@ export function DataManager({ data, onDataImport }: DataManagerProps) {
             Export Data
           </Button>
 
-          <div className="relative">
-            <Input
-              type="file"
-              accept=".json"
-              onChange={handleImport}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            <Button className="w-full flex items-center gap-2" variant="outline">
-              <Upload className="h-4 w-4" />
-              Import Data
-            </Button>
-          </div>
+          {isAdminMode && (
+            <>
+              <div className="relative">
+                <Input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImport}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <Button className="w-full flex items-center gap-2" variant="outline">
+                  <Upload className="h-4 w-4" />
+                  Import Data
+                </Button>
+              </div>
 
-          {importError && <p className="text-sm text-red-500">{importError}</p>}
+              {importError && <p className="text-sm text-red-500">{importError}</p>}
 
-          <Button onClick={handleClearData} className="w-full flex items-center gap-2" variant="outline" size="sm">
-            <Trash2 className="h-4 w-4" />
-            Clear All Data
-          </Button>
+              <Button onClick={handleClearData} className="w-full flex items-center gap-2" variant="outline" size="sm">
+                <Trash2 className="h-4 w-4" />
+                Clear All Data
+              </Button>
+            </>
+          )}
+
+          {!isAdminMode && (
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-500">Additional data management options available in admin mode</p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

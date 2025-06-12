@@ -216,7 +216,7 @@ export default function DSATracker() {
           </TabsContent>
 
           <TabsContent value="dashboard">
-            <Dashboard data={data} onDataImport={() => {}} />
+            <Dashboard data={data} onDataImport={() => {}} isAdminMode={isAdminMode} />
           </TabsContent>
         </Tabs>
 

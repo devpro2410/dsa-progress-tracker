@@ -10,9 +10,10 @@ import { DataManager } from "@/components/data-manager"
 interface DashboardProps {
   data: DSAData
   onDataImport: (data: DSAData) => void
+  isAdminMode?: boolean // Add admin mode prop
 }
 
-export function Dashboard({ data, onDataImport }: DashboardProps) {
+export function Dashboard({ data, onDataImport, isAdminMode = false }: DashboardProps) {
   const [selectedTopic, setSelectedTopic] = useState<string>("all")
 
   // Calculate total questions solved
@@ -272,8 +273,8 @@ export function Dashboard({ data, onDataImport }: DashboardProps) {
         </CardContent>
       </Card>
 
-      {/* Data Management */}
-      <DataManager data={data} onDataImport={onDataImport} />
+      {/* Data Management - Pass admin mode */}
+      <DataManager data={data} onDataImport={onDataImport} isAdminMode={isAdminMode} />
     </div>
   )
 }
