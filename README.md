@@ -16,7 +16,7 @@ Your project is live at:
 
 Clone the repository and run it locally:
 
-```bash
+\`\`\`bash
 git clone https://github.com/devpro2410/dsa-progress-tracker.git
 cd dsa-tracker
 npm install

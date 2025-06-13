@@ -150,7 +150,7 @@ export function Calendar({ data, onDateClick }: CalendarProps) {
                         }`}
                       >
                         {topic.split(" ")[0]}: {count}
-                        {isCompleted && " ✓"}
+                        {isCompleted && <span className="ml-1 text-green-800"> ✓</span>}
                       </div>
                     )
                   })}
